@@ -10,3 +10,6 @@
       POSTGRES_USER: user
       POSTGRES_DB: mydb
 
+  redis:
+    image: redis
+    ports: [ "6379:6379" ]
