@@ -1,124 +1,138 @@
+<h1 align="center">🔗 URL Shortner</h1>
+
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  Encurtador de URLs rápido e escalável, feito com <b>NestJS</b>, <b>PostgreSQL</b> e <b>Redis</b>.
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  <img alt="NestJS" src="https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" />
+  <img alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white" />
+  <img alt="Vitest" src="https://img.shields.io/badge/Vitest-6E9F18?logo=vitest&logoColor=white" />
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" />
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## ✨ Como funciona
 
-## Project setup
+1. Você envia uma URL de destino para `POST /shortner`.
+2. A API gera um **ID de 7 caracteres em base62** (≈ 3,5 trilhões de combinações), salva no Postgres e devolve o link curto.
+3. Ao acessar `GET /:id`, o app procura primeiro no **Redis** (cache-aside, TTL de 12h). Se não achar, busca no Postgres, popula o cache e **redireciona (302)** para o destino.
+4. Links expiram em **30 dias** por padrão.
 
-```bash
-$ npm install
+```
+POST /shortner                       GET /abc1234
+{ "destination_url": "https://..." } ──► 302 → https://...
+        │
+        ▼
+{ "short_url": "http://localhost:3001/abc1234" }
 ```
 
-## Compile and run the project
+## 🏗️ Arquitetura
 
-```bash
-# development
-$ npm run start
+O projeto segue **arquitetura hexagonal (ports & adapters)**: o domínio e os casos de uso não conhecem Postgres nem Redis, só as interfaces (*ports*).
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```
+src/shortner
+├── adapters
+│   ├── inbound/controllers     # HTTP (controller + DTO)
+│   └── outbound
+│       ├── cache               # RedisClient
+│       └── repositories        # ShortnerRepositoryImpl (Prisma)
+├── application
+│   ├── ports                   # interfaces (inbound/outbound)
+│   ├── services                # ShortnerService
+│   └── mappers                 # DTO -> entidade (gera o ID)
+└── domain                      # entidades e exceções
 ```
 
-## Run tests
+### 🗺️ Visão planejada
+
+<p align="center">
+  <img src="docs/architecture.png" alt="Arquitetura planejada: load balancer, containers, Redis, banco e consumer de estatísticas" width="780" />
+</p>
+
+- **Load balancer** distribuindo as requisições entre várias instâncias (containers) da API.
+- **Redis** como cache de leitura dos redirecionamentos.
+- **Banco de dados** (PostgreSQL) como fonte da verdade.
+- **Message broker + Statistics consumer** *(planejado)*: cada acesso gera um evento, e um consumer processa as estatísticas de forma assíncrona, sem pesar no redirecionamento.
+
+## 🚀 Rodando localmente
+
+**Pré-requisitos:** Node.js 22+, Docker.
 
 ```bash
-# unit tests
-$ npm run test
+# 1. dependências
+npm install
 
-# e2e tests
-$ npm run test:e2e
+# 2. Postgres e Redis
+docker compose -f docker.compose.yaml up -d
 
-# test coverage
-$ npm run test:cov
+# 3. variáveis de ambiente
+cp .env.example .env
+# ajuste o DATABASE_URL para bater com o docker compose:
+# postgresql://user:example@localhost:5432/mydb
+
+# 4. subir a API
+npm run start:dev
 ```
 
-## Deployment
+### Variáveis de ambiente
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+| Variável       | Descrição                                           | Exemplo                                      |
+| -------------- | --------------------------------------------------- | -------------------------------------------- |
+| `DATABASE_URL` | Conexão com o PostgreSQL (>= 15)                    | `postgresql://user:example@localhost:5432/mydb` |
+| `APP_URL`      | URL pública base, usada para montar o link curto    | `http://localhost:3001`                      |
+| `PORT`         | Porta da API (padrão `3000`)                        | `3001`                                       |
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 📡 API
+
+### Criar link curto
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+curl -X POST http://localhost:3001/shortner \
+  -H "Content-Type: application/json" \
+  -d '{ "destination_url": "https://github.com/TiagoAReiz" }'
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+```json
+{ "short_url": "http://localhost:3001/aB3dE9x" }
+```
 
-## Observability
+A `destination_url` precisa ser uma URL válida **com protocolo** (`http://` ou `https://`).
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
+### Acessar link curto
 
 ```bash
-$ npm install @nestjs/observe
+curl -i http://localhost:3001/aB3dE9x
+# HTTP/1.1 302 Found
+# Location: https://github.com/TiagoAReiz
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+Se o ID não existir, a resposta é `404`.
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+## 🧪 Testes
 
-## Resources
+```bash
+npm test            # unitários (service, repository, redis client)
+npm run test:cov    # com cobertura
+npm run test:e2e    # e2e
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## 🛠️ Stack
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- [NestJS](https://nestjs.com/) + TypeScript
+- [Prisma 8](https://www.prisma.io/) para acesso ao PostgreSQL
+- [Redis](https://redis.io/) como cache
+- [Vitest](https://vitest.dev/) para testes
+- [oxlint](https://oxc.rs/) para lint
 
-## Support
+## 🗺️ Roadmap
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- [x] Criação e redirecionamento de links
+- [x] Cache com Redis
+- [ ] Load balancer + múltiplas instâncias em containers
+- [ ] Message broker e consumer de estatísticas de acesso
+- [ ] Endpoint de estatísticas por link
