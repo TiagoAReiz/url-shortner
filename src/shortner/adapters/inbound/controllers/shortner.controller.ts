@@ -1,18 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Redirect, NotFoundException } from '@nestjs/common';
+import { NotFoundUrl } from '../../../domain/exceptions/not-found-url.js';
 import { ShortnerService } from '../../../application/services/shortner.service.js';
 import { CreateShortnerDto } from './dto/create-shortner.dto.js';
 
 
-@Controller('shortner')
+@Controller()
 export class ShortnerController {
   constructor(private readonly shortnerService: ShortnerService) {}
 
-  @Post()
-  create(@Body() createShortnerDto: CreateShortnerDto) {
-    return this.shortnerService.create(createShortnerDto);
+  @Post('shortner')
+  async create(@Body() createShortnerDto: CreateShortnerDto) {
+    const short_url = await this.shortnerService.create(createShortnerDto);
+    return { short_url };
   }
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.shortnerService.findOne(id);
+  @Redirect()
+  async findOne(@Param('id') id: string) {
+    try {
+      const url = await this.shortnerService.findOne(id);
+      return { url, statusCode: 302 };
+    } catch (error) {
+      if (error instanceof NotFoundUrl) throw new NotFoundException(error.message);
+      throw error;
+    }
   }
 }
