@@ -10,6 +10,11 @@ import {
   type CacheInterface,
 } from '../ports/outbound/cache/cache.interface.js';
 import { NotFoundUrl } from '../../domain/exceptions/not-found-url.js';
+import {
+  EVENT_PUBLISHER,
+  type EventPublisher,
+} from '../ports/outbound/messaging/event-publisher.interface.js';
+import type { VisitorContext } from '../../domain/entities/visitor-context.js';
 import { ShortnerMapper } from '../mappers/shortner.mapper.js';
 
 @Injectable()
@@ -17,6 +22,7 @@ export class ShortnerService implements ShortnerServiceInterface {
   constructor(
     @Inject(SHORTNER_REPOSITORY) private readonly repo: ShortnerRepository,
     @Inject(CACHE) private readonly cache: CacheInterface,
+    @Inject(EVENT_PUBLISHER) private readonly publisher: EventPublisher,
   ) {}
 
   async create(createShortnerDto: CreateShortnerDto): Promise<string> {
@@ -31,14 +37,26 @@ export class ShortnerService implements ShortnerServiceInterface {
     return url.replace(/\/+$/, '');
   }
 
-  async findOne(id: string): Promise<string> {
+  async findOne(id: string, visitor: VisitorContext = {}): Promise<string> {
     const cached = await this.cache.getByKey(id);
-    if (cached) return cached;
+    if (cached) {
+      this.trackAccess(id, visitor);
+      return cached;
+    }
 
     const shortner = await this.repo.getById(id);
     if (!shortner) throw new NotFoundUrl(id);
 
     await this.cache.createCache(id, shortner.destination_url);
+    this.trackAccess(id, visitor);
     return shortner.destination_url;
+  }
+
+  private trackAccess(id: string, visitor: VisitorContext): void {
+    this.publisher.linkAccessed({
+      id,
+      accessedAt: new Date().toISOString(),
+      ...visitor,
+    });
   }
 }

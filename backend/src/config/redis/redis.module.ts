@@ -9,7 +9,9 @@ export type RedisClientInstance = ReturnType<typeof createClient>;
     {
       provide: REDIS,
       useFactory: async () => {
-        const client = createClient({ url: 'redis://localhost:6379' });
+        const client = createClient({
+          url: process.env['REDIS_URL'] ?? 'redis://localhost:6379',
+        });
         client.on('error', (err) => console.error('Redis', err));
         await client.connect();
         return client;

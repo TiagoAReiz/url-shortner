@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Redirect, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Redirect, NotFoundException, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { NotFoundUrl } from '../../../domain/exceptions/not-found-url.js';
 import { ShortnerService } from '../../../application/services/shortner.service.js';
 import { CreateShortnerDto } from './dto/create-shortner.dto.js';
@@ -15,9 +16,13 @@ export class ShortnerController {
   }
   @Get(':id')
   @Redirect()
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: Request) {
     try {
-      const url = await this.shortnerService.findOne(id);
+      const url = await this.shortnerService.findOne(id, {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        referer: req.headers['referer'],
+      });
       return { url, statusCode: 302 };
     } catch (error) {
       if (error instanceof NotFoundUrl) throw new NotFoundException(error.message);
