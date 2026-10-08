@@ -1,4 +1,4 @@
-﻿import { Shortner } from '../../../../domain/entities/shortner.entity';
+﻿import { Shortner } from '../../../../domain/entities/shortner.entity.js';
 
 
 export interface ShortnerRepository {
@@ -7,3 +7,5 @@ export interface ShortnerRepository {
 
   getById(id: string): Promise<Shortner | null>
 }
+
+export const SHORTNER_REPOSITORY = Symbol('SHORTNER_REPOSITORY');

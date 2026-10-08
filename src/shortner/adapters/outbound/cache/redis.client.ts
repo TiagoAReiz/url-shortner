@@ -1,10 +1,10 @@
 ﻿import { Inject, Injectable } from '@nestjs/common';
-import { CacheInterface } from '../../../application/ports/outbound/cache/cache.interface';
+import { CacheInterface } from '../../../application/ports/outbound/cache/cache.interface.js';
 
 import {
   REDIS,
   type RedisClientInstance,
-} from '../../../../config/redis/redis.module';
+} from '../../../../config/redis/redis.module.js';
 
 const EXP_TIME_IN_SEC = 60 * 60 * 12; //12hrs
 
