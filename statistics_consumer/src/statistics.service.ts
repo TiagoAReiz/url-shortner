@@ -1,4 +1,5 @@
 import { Controller, Logger } from '@nestjs/common';
+import { AccessRepository } from './access.repository.js';
 import {
   Ctx,
   EventPattern,
@@ -20,6 +21,8 @@ export interface LinkAccessedEvent {
 export class StatisticsService {
   private readonly logger = new Logger(StatisticsService.name);
 
+  constructor(private readonly accesses: AccessRepository) {}
+
   @EventPattern('link.accessed')
   async handleLinkAccessed(
     @Payload() event: LinkAccessedEvent,
@@ -29,10 +32,13 @@ export class StatisticsService {
     const channel = rmq.getChannelRef();
     const message = rmq.getMessage();
     try {
-      // TODO: gravar a estatística no banco
-      this.logger.log(
-        `Link ${event.id} acessado em ${event.accessedAt} ip=${event.ip} ua=${event.userAgent} ref=${event.referer}`,
-      );
+      await this.accesses.save({
+        shortnerId: event.id,
+        accessedAt: event.accessedAt,
+        ip: event.ip,
+        userAgent: event.userAgent,
+        referer: event.referer,
+      });
       channel.ack(message);
     } catch (error) {
       this.logger.error(`Falha ao processar ${event.id}: ${error}`);
