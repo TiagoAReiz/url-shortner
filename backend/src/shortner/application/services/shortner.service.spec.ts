@@ -45,6 +45,22 @@ describe('ShortnerService', () => {
       expect(result).toBe(`http://localhost:3000/${saved.id}`);
     });
 
+    it('atrela o link ao usuário quando há userId', async () => {
+      repo.save.mockImplementation(async (s) => s);
+
+      await service.create({ destination_url: 'https://a.com' } as never, 'user-1');
+
+      expect(repo.save.mock.calls[0]![0].user_id).toBe('user-1');
+    });
+
+    it('cria link anônimo (user_id null) sem userId', async () => {
+      repo.save.mockImplementation(async (s) => s);
+
+      await service.create({ destination_url: 'https://a.com' } as never);
+
+      expect(repo.save.mock.calls[0]![0].user_id).toBeNull();
+    });
+
     it('remove barras finais da APP_URL', async () => {
       process.env['APP_URL'] = 'http://localhost:3000///';
       repo.save.mockResolvedValue({ id: 'abc1234' });

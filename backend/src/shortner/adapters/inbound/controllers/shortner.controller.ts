@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Redirect, NotFoundException, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Redirect, NotFoundException, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { NotFoundUrl } from '../../../domain/exceptions/not-found-url.js';
+import { OptionalAuthGuard, CurrentUser } from '../../../../auth/adapters/inbound/guards/auth.guards.js';
+import type { User } from '../../../../auth/domain/user.entity.js';
 import { ShortnerService } from '../../../application/services/shortner.service.js';
 import { CreateShortnerDto } from './dto/create-shortner.dto.js';
 
@@ -9,9 +11,17 @@ import { CreateShortnerDto } from './dto/create-shortner.dto.js';
 export class ShortnerController {
   constructor(private readonly shortnerService: ShortnerService) {}
 
+  // Anônimo pode criar; se estiver logado, o link fica atrelado ao usuário.
   @Post('shortner')
-  async create(@Body() createShortnerDto: CreateShortnerDto) {
-    const short_url = await this.shortnerService.create(createShortnerDto);
+  @UseGuards(OptionalAuthGuard)
+  async create(
+    @Body() createShortnerDto: CreateShortnerDto,
+    @CurrentUser() user?: User,
+  ) {
+    const short_url = await this.shortnerService.create(
+      createShortnerDto,
+      user?.id,
+    );
     return { short_url };
   }
   @Get(':id')

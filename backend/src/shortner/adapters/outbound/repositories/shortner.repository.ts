@@ -17,6 +17,7 @@ export class ShortnerRepositoryImpl implements ShortnerRepository {
       destination_url: url.destination_url,
       created_at: toInstant(url.created_at),
       expires_at: toInstant(url.expires_at),
+      user_id: url.user_id,
     });
     return Object.assign(new Shortner(), row, {
       created_at: toDate(row.created_at),

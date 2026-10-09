@@ -3,4 +3,5 @@ export class Shortner {
       destination_url: string;
       created_at: Date;
       expires_at: Date;
+      user_id: string | null;
 }

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module.js';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ShortnerService } from './application/services/shortner.service.js';
 import { ShortnerController } from './adapters/inbound/controllers/shortner.controller.js';
@@ -14,6 +15,7 @@ import { RedisClient } from './adapters/outbound/cache/redis.client.js';
 
 @Module({
   imports: [
+    AuthModule,
     ClientsModule.register([
       {
         name: STATS_CLIENT,

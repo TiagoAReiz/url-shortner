@@ -25,8 +25,11 @@ export class ShortnerService implements ShortnerServiceInterface {
     @Inject(EVENT_PUBLISHER) private readonly publisher: EventPublisher,
   ) {}
 
-  async create(createShortnerDto: CreateShortnerDto): Promise<string> {
-    const shortner = ShortnerMapper.toEntity(createShortnerDto);
+  async create(
+    createShortnerDto: CreateShortnerDto,
+    userId?: string,
+  ): Promise<string> {
+    const shortner = ShortnerMapper.toEntity(createShortnerDto, userId);
     const saved = await this.repo.save(shortner);
     return `${this.appUrl}/${saved.id}`;
   }

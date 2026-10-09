@@ -16,7 +16,7 @@ export class ShortnerMapper {
     return id;
   }
 
-  static toEntity(dto: CreateShortnerDto): Shortner {
+  static toEntity(dto: CreateShortnerDto, userId?: string): Shortner {
     const now = new Date();
 
     return Object.assign(new Shortner(), {
@@ -24,6 +24,7 @@ export class ShortnerMapper {
       destination_url: dto.destination_url,
       created_at: now,
       expires_at: new Date(now.getTime() + DEFAULT_TTL_IN_MS),
+      user_id: userId ?? null,
     });
   }
 }
