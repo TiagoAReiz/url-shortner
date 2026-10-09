@@ -51,7 +51,7 @@ src/shortner
 ### 🗺️ Visão planejada
 
 <p align="center">
-  <img src="docs/architecture.png" alt="Arquitetura planejada: load balancer, containers, Redis, banco e consumer de estatísticas" width="780" />
+  <img src="backend/docs/architecture.png" alt="Arquitetura planejada: load balancer, containers, Redis, banco e consumer de estatísticas" width="780" />
 </p>
 
 - **Load balancer** distribuindo as requisições entre várias instâncias (containers) da API.
