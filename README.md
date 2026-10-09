@@ -34,7 +34,7 @@
 </p>
 
 ```
- navegador ─► frontend (Next.js, :3001)
+ navegador ─► frontend (Next.js, :5173)
      │              │ chama a API (cookie de sessão)
      ▼              ▼
    nginx ─►┌─────────────┐
@@ -91,12 +91,12 @@ Um comando só, na raiz, sobe Postgres, Redis, RabbitMQ, **3 réplicas da API**,
 
 | Serviço | Endereço |
 |---|---|
-| Frontend | http://localhost:3001 |
+| Frontend | http://localhost:5173 |
 | API (via nginx) | http://localhost |
 | Painel do RabbitMQ | http://localhost:15672 (`user` / `example`) |
 | Postgres | `localhost:5432` (`user` / `example`, banco `mydb`) |
 
-> Use sempre `--scale backend=N` ao rodar `up`, senão o compose volta para 1 réplica. A porta do frontend é configurável em `FRONTEND_PORT` (o padrão é 3001 porque a 3000 costuma estar ocupada por outros projetos).
+> Use sempre `--scale backend=N` ao rodar `up`, senão o compose volta para 1 réplica. A porta do frontend é configurável em `FRONTEND_PORT` (o padrão é 5173 porque a 3000 costuma estar ocupada por outros projetos).
 
 Para ver os logs: `docker compose logs -f backend statistics_consumer`. Para derrubar: `docker compose down` (ou `down -v` para apagar também o banco).
 
@@ -105,7 +105,7 @@ Para ver os logs: `docker compose logs -f backend statistics_consumer`. Para der
 Cada resposta da API traz o header `X-Served-By` com o container que atendeu:
 
 ```bash
-for i in $(seq 1 30); do curl -s -o /dev/null -D - localhost/<ID> | grep -i x-served | tr -d '
+for i in $(seq 1 30); do curl -s -o /dev/null -D - localhost/<ID> | grep -i x-served | tr -d '
  '; echo; done | sort | uniq -c
 ```
 
@@ -120,9 +120,9 @@ Cada app roda com `npm run start:dev` (backend e consumer) ou `npm run dev` (fro
 | `GOOGLE_CLIENT_ID` | Client ID OAuth 2.0 (tipo *Web*) do Google. Usado pelo backend e embutido no frontend no build |
 | `JWT_SECRET` | Segredo que assina o JWT da sessão |
 | `ADMIN_EMAILS` | E-mails (separados por vírgula) com acesso à visão de admin |
-| `CORS_ORIGIN` | Origem(ns) do frontend liberadas no CORS (padrão `http://localhost:3001`) |
+| `CORS_ORIGIN` | Origem(ns) do frontend liberadas no CORS (padrão `http://localhost:5173`) |
 | `NEXT_PUBLIC_API_URL` | URL da API vista pelo navegador (padrão `http://localhost`) |
-| `FRONTEND_PORT` | Porta do frontend no seu computador (padrão `3001`) |
+| `FRONTEND_PORT` | Porta do frontend no seu computador (padrão `5173`) |
 
 As conexões com Postgres, Redis e RabbitMQ já estão configuradas no compose com os nomes dos serviços. Fora do Docker, o backend lê `DATABASE_URL`, `APP_URL`, `PORT`, `REDIS_URL` e `RABBITMQ_URL` (veja `backend/.env.example`).
 
@@ -131,7 +131,7 @@ As conexões com Postgres, Redis e RabbitMQ já estão configuradas no compose c
 ### Configurando o login com Google
 
 1. Em [console.cloud.google.com](https://console.cloud.google.com), vá em **APIs e serviços → Credenciais → Criar credenciais → ID do cliente OAuth** (tipo *Aplicativo da Web*).
-2. Em **Origens JavaScript autorizadas**, adicione `http://localhost:3001` e `http://localhost` (e a URL de produção do frontend, quando houver). **URIs de redirecionamento** pode ficar vazio.
+2. Em **Origens JavaScript autorizadas**, adicione `http://localhost:5173` e `http://localhost` (e a URL de produção do frontend, quando houver). **URIs de redirecionamento** pode ficar vazio.
 3. Copie o Client ID para `GOOGLE_CLIENT_ID` e gere um segredo para o JWT:
    ```bash
    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
