@@ -39,6 +39,11 @@ services:
       DATABASE_URL: postgresql://user:example@db:5432/mydb
       REDIS_URL: redis://redis:6379
       RABBITMQ_URL: amqp://user:example@rabbitmq:5672
+      # Auth (valores vêm do backend/.env; os defaults servem só para dev)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
     depends_on:
       db:
         condition: service_healthy
